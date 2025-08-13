@@ -3,37 +3,6 @@ import pandas as pd
 import numpy as np
 
 
-def get_vol_surface_data(folder, years, bad_dates=[]):
-    all_w_grid = []
-    for year in years:
-        df = pd.read_csv(f"{folder}/processed_data_{year}.csv", skipinitialspace=True)
-        # get all unique quote dates
-        all_quote_dates = df["QUOTE_DATE"].unique()
-
-        for quote_date in all_quote_dates:
-            # Skip if the date is in the bad_dates list
-            if quote_date in bad_dates:
-                print(f"Skipping bad date {quote_date}")
-                continue
-            vol_grid_filename = f"{folder}/{year}/grid_data_{quote_date}.csv"
-            if not pd.io.common.file_exists(vol_grid_filename):
-                print(f"File {vol_grid_filename} does not exist, skipping.")
-                continue
-            pd_vol_grid_data = pd.read_csv(vol_grid_filename)
-            total_var_grid = pd_vol_grid_data["total_var_grid"].values
-            k_grid = pd_vol_grid_data["k_grid"].values
-            T_grid = pd_vol_grid_data["T_grid"].values
-            all_w_grid.append(total_var_grid)
-    return all_w_grid, k_grid, T_grid
-
-
-def pack_vol_data_to_npz(folder, all_w_grid, k_grid, T_grid):
-    all_w_grid = np.array(all_w_grid)
-    # unflatten the grid
-    all_w_grid, k_grid, T_grid = unflatten_grid(all_w_grid.flatten(), k_grid, T_grid)
-    np.savez(f"{folder}/vol_surface_data.npz", all_w_grid=all_w_grid, k_grid=k_grid, T_grid=T_grid)
-    print(f"Saved volatility surface data to {folder}/vol_surface_data.npz")
-
 
 def profile_likelihood_dim(s, eps=1e-12):
     """
@@ -76,28 +45,14 @@ def profile_likelihood_dim(s, eps=1e-12):
     q_hat = np.argmax(loglik) + 1  # +1 because q starts at 1
     return q_hat, loglik
 
-
-def unflatten_grid(flattened_grid, k_grid, T_grid):
-    k_unique = np.unique(k_grid)
-    T_unique = np.unique(T_grid)
-    grid_2d = np.zeros((len(T_unique), len(k_unique)))
-
-    for i, t in enumerate(T_unique):
-        for j, k in enumerate(k_unique):
-            idx = np.where((np.isclose(T_grid, t)) & (np.isclose(k_grid, k)))[0]
-            if len(idx) > 0:
-                grid_2d[i, j] = flattened_grid[idx[0]]
-
-    return grid_2d, k_unique, T_unique
-
-
 def svd_analysis(folder, all_w_grid, k_grid, T_grid):
 
-    all_w_grid = np.array(all_w_grid)
+    all_w_grid_flatten = all_w_grid.reshape(all_w_grid.shape[0], -1)
     print("all_w_grid.shape", all_w_grid.shape)
+    print("all_w_grid_flatten.shape", all_w_grid_flatten.shape)
 
     # Perform SVD
-    U, s, Vt = np.linalg.svd(all_w_grid, full_matrices=False)
+    U, s, Vt = np.linalg.svd(all_w_grid_flatten, full_matrices=False)
     q_hat, loglik = profile_likelihood_dim(s)
 
     fig, ax1 = plt.subplots(figsize=(10, 6))
@@ -132,19 +87,19 @@ def svd_analysis(folder, all_w_grid, k_grid, T_grid):
     # Unflatten the grid for plotting
 
     # Plot the first six singular vectors as heatmaps
-    plt.figure(figsize=(18, 5))
-    for i in range(6):
-        plt.subplot(2, 3, i + 1)
+    plt.figure(figsize=(15, 12))
+    for i in range(9):
+        plt.subplot(3, 3, i + 1)
         # Vt contains the right singular vectors (modes of variation in volatility surfaces)
         vec = Vt[i]
         # Reshape the vector back to the 2D grid
-        vec_2d, k_unique, T_unique = unflatten_grid(vec, k_grid, T_grid)
+        vec_2d = vec.reshape(len(k_grid), len(T_grid))
 
-        img = plt.imshow(vec_2d, aspect="auto", cmap="viridis", origin="lower", extent=[min(k_unique), max(k_unique), min(T_unique), max(T_unique)])
+        img = plt.imshow(vec_2d, aspect="auto", cmap="viridis", origin="lower", extent=[min(k_grid), max(k_grid), min(T_grid), max(T_grid)])
         plt.colorbar(img, label=f"SV {i+1} Value")
         plt.title(f"Singular Vector {i+1}")
-        plt.xlabel("Strike (k)")
-        plt.ylabel("Time to Maturity (T)")
+        plt.ylabel("Strike (k)")
+        plt.xlabel("Time to Maturity (T)")
 
     plt.tight_layout()
     plt.savefig(f"{folder}/svd_singular_vectors.png")

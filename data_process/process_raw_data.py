@@ -130,14 +130,14 @@ def process_volatility_surface(folder, year):
     all_quote_dates = df["QUOTE_DATE"].unique()
     print("all_quote_dates", all_quote_dates)
     for quote_date in all_quote_dates:
-        #if quote_date != "2023-10-18":
+        # if quote_date != "2023-10-18":
         #    continue
         print(f"Processing quote date: {quote_date}")
         df_quote_date = df[df["QUOTE_DATE"] == quote_date]
         print(df_quote_date)
         df_vol_surface = find_volatility_surface_per_quote_date(df_quote_date)
-        #df_vol_surface = df_vol_surface[["LOG_MONEYNESS", "YTE", "BS_VOL"]]
-        df_vol_surface = df_vol_surface[["FORWARD", "LOG_MONEYNESS", "YTE", "BS_VOL", "TOTAL_VARIANCE"]]
+        # df_vol_surface = df_vol_surface[["LOG_MONEYNESS", "YTE", "BS_VOL"]]
+        df_vol_surface = df_vol_surface[["FORWARD", "UNDERLYING_LAST", "SPOT_LOG_MONEYNESS", "FWD_LOG_MONEYNESS", "YTE", "BS_VOL", "TOTAL_VARIANCE"]]
         df_vol_surface = df_vol_surface[df_vol_surface["BS_VOL"] > 0]
         df_vol_surface = df_vol_surface[df_vol_surface["YTE"] < 1.5]
         df_vol_surface.to_csv(f"{year_folder}/volatility_surface_{quote_date}.csv", index=False)
@@ -209,11 +209,11 @@ def black76_implied_volatility(option_price, forward_price, strike_price, time_t
 
 def find_volatility_surface_per_quote_date(df):
     # Calculate forward price for each unique expiry
-    unique_expiries = df['YTE'].unique()
+    unique_expiries = df["YTE"].unique()
     forward_prices = {}
 
     for expiry in unique_expiries:
-        expiry_df = df[df['YTE'] == expiry]
+        expiry_df = df[df["YTE"] == expiry]
         if expiry_df.empty:
             continue
         print(f"Calculating forward price for expiry: {expiry}")
@@ -221,7 +221,7 @@ def find_volatility_surface_per_quote_date(df):
         forward_prices[expiry] = find_fwd_per_quote_date(expiry_df)
 
     # Map forward prices back to original dataframe
-    df['FORWARD'] = df['YTE'].map(forward_prices)
+    df["FORWARD"] = df["YTE"].map(forward_prices)
 
     df["BS_VOL"] = df.apply(
         lambda r: black76_implied_volatility(
@@ -229,12 +229,13 @@ def find_volatility_surface_per_quote_date(df):
             forward_price=r["FORWARD"],
             strike_price=r["STRIKE"],
             time_to_expiry=r["YTE"],
-            interest_rate=0.04,
+            interest_rate=0.02,
             option_type="call" if r["STRIKE"] > r["FORWARD"] else "put",
         ),
         axis=1,
     )
-    df["LOG_MONEYNESS"] = np.log(df["STRIKE"] / df["FORWARD"])
-    df["TOTAL_VARIANCE"] = df["BS_VOL"]**2 * df["YTE"]
+    df["SPOT_LOG_MONEYNESS"] = np.log(df["STRIKE"] / df["UNDERLYING_LAST"])
+    df["FWD_LOG_MONEYNESS"] = np.log(df["STRIKE"] / df["FORWARD"])
+    df["TOTAL_VARIANCE"] = df["BS_VOL"] ** 2 * df["YTE"]
     print(df.head())
     return df
