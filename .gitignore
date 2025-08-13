@@ -6,8 +6,12 @@ code/*.out
 data_process/__pycache__
 data_process/data_pack
 data_process/optionsdx_data
+!pricing
+pricing/__pycache__
+
 !analyze
 analyze/__pycache__
+
 !plot
 plot/__pycache__
 plot/figures/*
