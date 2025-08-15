@@ -15,15 +15,20 @@ def main():
 
     # 4 latent space correlation?
 
-    #plot_latent_space()
+    plot_latent_space()
 
     # 5, do I need loss curve?
+    #plot loss curve 4 curves
+    #plot_loss_curves()
 
     #6 , reconstruction of vol surface?
     #plot_vol_surface_reconstruction()
 
     # 7, American put pricing prediction?
-    plot_price_prediction()
+    #plot_price_prediction_AmericanPut()
+    #plot_price_prediction_AsianOpt()
+
+
 
 
 

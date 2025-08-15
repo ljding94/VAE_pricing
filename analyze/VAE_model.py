@@ -12,6 +12,7 @@ import warnings
 import pandas as pd
 import matplotlib.pyplot as plt
 from torch.optim.lr_scheduler import CosineAnnealingLR  # ← NEW import
+from typing import Optional, Union
 
 # --------------------------
 # Data Loading Functions
@@ -538,7 +539,7 @@ def train_and_save_pricer(
     vae_model_path: str,
     latent_dim: int = 6,
     pricing_param_dim: int = 2,
-    batch_size: int = 32,
+    batch_size: int = 128,
     num_epochs: int = 100,
     num_epochs_fine_tune: int = 50,
     lr: float = 1e-3,
@@ -732,10 +733,10 @@ def train_and_save_pricer(
     test_losses.extend(test_losses_fine_tune)
 
     # Save model state dict and loss histories
-    state_path = os.path.join(folder, "pricer_state_dict.pt")
+    state_path = os.path.join(folder, f"{product_type}_pricer_state_dict.pt")
     torch.save(model.state_dict(), state_path)
-    np.save(os.path.join(folder, "pricer_train_losses.npy"), np.array(train_losses))
-    np.save(os.path.join(folder, "pricer_test_losses.npy"), np.array(test_losses))
+    np.save(os.path.join(folder, f"{product_type}_pricer_train_losses.npy"), np.array(train_losses))
+    np.save(os.path.join(folder, f"{product_type}_pricer_test_losses.npy"), np.array(test_losses))
 
     print(f"Saved pricer model state to {state_path}")
     print(f"Saved pricer train/test losses to {folder}")
@@ -743,7 +744,7 @@ def train_and_save_pricer(
     return model, train_losses, test_losses
 
 
-def plot_loss_curves(folder: str):
+def plot_loss_curves(folder: str, product_type: str):
     """
     -----------------------------------------------------------
     Plot train / test loss versus *epoch* for both VAE and Pricer models.
@@ -763,8 +764,8 @@ def plot_loss_curves(folder: str):
     test_losses = np.load(test_file)
 
     # Try to load pricer loss files
-    pricer_train_file = os.path.join(folder, "pricer_train_losses.npy")
-    pricer_test_file = os.path.join(folder, "pricer_test_losses.npy")
+    pricer_train_file = os.path.join(folder, f"{product_type}_pricer_train_losses.npy")
+    pricer_test_file = os.path.join(folder, f"{product_type}_pricer_test_losses.npy")
 
     pricer_exists = os.path.exists(pricer_train_file) and os.path.exists(pricer_test_file)
     if pricer_exists:
@@ -804,7 +805,7 @@ def plot_loss_curves(folder: str):
         ax2.grid(True, alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig(f"{folder}/loss_curve.png", dpi=300)
+    plt.savefig(f"{folder}/{product_type}_loss_curve.png", dpi=300)
     plt.show()
     plt.close()
 
@@ -947,11 +948,11 @@ def visualize_latent_distribution(model_path: str, folder: str, latent_dim: int 
 
 def show_random_reconstructions(
     folder: str,
-    model_path: str | None = None,
-    model: VAE | None = None,
+    model_path: Optional[str] = None,
+    model: Optional[VAE] = None,
     latent_dim: int = 6,
     num_samples: int = 4,
-    device: str | torch.device | None = None,
+    device: Optional[Union[str, torch.device]] = None,
     cmap: str = "rainbow",
 ):
     # -------------------------------------------------------------
@@ -1073,10 +1074,10 @@ def show_random_reconstructions(
 def show_quote_date_reconstructions(
     folder: str,
     quote_dates: list,
-    model_path: str | None = None,
-    model: VAE | None = None,
+    model_path: Optional[str] = None,
+    model: Optional[VAE] = None,
     latent_dim: int = 6,
-    device: str | torch.device | None = None,
+    device: Optional[Union[str, torch.device]] = None,
     cmap: str = "rainbow",
     data_type: str = "train",
 ):
@@ -1269,7 +1270,7 @@ def plot_predict_prices_from_vol_surface_and_params(
     pricing_param_dim: int = 2,
     vol_input_shape: tuple = (41, 20),
     batch_size: int = 32,
-    device: str | torch.device | None = None,
+    device: Optional[Union[str, torch.device]] = None,
 ) -> dict:
     """
     Predict prices using a trained Pricer model and plot predicted vs ground truth prices for both train and test data.
@@ -1450,7 +1451,7 @@ def plot_predict_prices_from_vol_surface_and_params(
                              verticalalignment="top", bbox=dict(boxstyle="round", facecolor="lightgreen", alpha=0.8))
 
         plt.tight_layout()
-        plt.savefig(f"{folder}/pricer_prediction_comparison_train_test.png", dpi=300)
+        plt.savefig(f"{folder}/{product_type}_pricer_prediction_comparison_train_test.png", dpi=300)
 
     else:
         # Test only comparison (original format)

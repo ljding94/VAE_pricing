@@ -115,8 +115,10 @@ def plot_svd_analysis():
     # add annotation in a for loop
     axs = [ax1] + vol_axs
     annos = [r"$(a)$", r"$(b)$", r"$(c)$", r"$(d)$", r"$(e)$", r"$(f)$", r"$(g)$", r"$(h)$", r"$(i)$"]
+    V_annos = [""] + [f"$V_{{{i}}}$" for i in range(8)]
     for i, ax in enumerate(axs):
         ax.text(0.7, 0.8, annos[i], transform=ax.transAxes, fontsize=9)
+        ax.text(0.3, 0.8, V_annos[i], transform=ax.transAxes, fontsize=9)
 
 
     plt.tight_layout(pad=0.2)
