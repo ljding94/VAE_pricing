@@ -42,8 +42,8 @@ def plot_latent_space():
     ax1.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
     ax1.tick_params(axis="both", which="both", direction="in", top=True, right=True, labelsize=7)
     ax1.set_xlim(-3, 4)
-    ax1.xaxis.set_major_locator(plt.MultipleLocator(2))
-    ax1.xaxis.set_minor_locator(plt.MultipleLocator(1))
+    ax1.xaxis.set_major_locator(plt.MultipleLocator(4))
+    ax1.xaxis.set_minor_locator(plt.MultipleLocator(2))
     ax1.yaxis.set_major_locator(plt.MultipleLocator(0.5))
     ax1.yaxis.set_minor_locator(plt.MultipleLocator(0.25))
 
