@@ -4,10 +4,12 @@ code/*.o
 code/*.out
 !data_process
 data_process/__pycache__
-data_process/data_pack
+data_process/data_pack/*
 data_process/optionsdx_data
 !data_process/data_pack/*.pt
+!data_process/data_pack/*.pnz
 !data_process/data_pack/post_vol_*
+
 !pricing
 pricing/__pycache__
 

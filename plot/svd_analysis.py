@@ -26,7 +26,7 @@ def plot_svd_analysis():
     train_vol_surfaces = vol_surfaces
 
     test_vol_data_path = f"../data_process/data_pack/{label}grid_test.npz"
-    data, quote_dates, vol_surfaces, K_grid, T_grid = read_vol_data(train_vol_data_path, label)
+    data, quote_dates, vol_surfaces, K_grid, T_grid = read_vol_data(test_vol_data_path, label)
     test_vol_surfaces = vol_surfaces
 
     k_grid = data["k_grid"]
